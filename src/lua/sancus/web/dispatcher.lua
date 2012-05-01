@@ -64,5 +64,9 @@ function M:add(expr, h, kw)
 end
 
 return {
-	PathMapper = function () return M({patterns = {},}) end
+	PathMapper = function (o)
+		o = M(o)
+		o.patterns = o.patterns or {}
+		return o
+	end
 }
