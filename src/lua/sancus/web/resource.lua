@@ -77,6 +77,39 @@ function C:__call(environ)
 	return self.status, self.headers, coroutine.wrap(self.app_iter)
 end
 
+--
+--
+function MinimalMiddleware(app)
+	local function nop() end
+
+	return function(env)
+		local status, headers, iter = app(env)
+		if headers == nil then
+			headers = { ['Content-Type'] = 'plain/text' }
+		end
+		for k,v in pairs(headers) do
+			if type(v) == 'table' then
+				local t
+				if #v > 0 then
+					t = v
+				else
+					t = {}
+					for kv,_ in pairs(v) do
+						t[#t+1] = kv
+					end
+				end
+				headers[k] = table.concat(t, ", ")
+			end
+		end
+		if iter == nil then
+			iter = coroutine.wrap(nop)
+		end
+
+		return status, headers, iter
+	end
+end
+
 return {
 	Resource = C,
+	MinimalMiddleware = MinimalMiddleware,
 }
