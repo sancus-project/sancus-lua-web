@@ -1,6 +1,7 @@
 --
+local lfs = assert(require"lfs")
 local utils = require"sancus.utils"
-local stdout, pp = utils.stdout, utils.pprint
+local stderr, pformat = utils.stderr, utils.pformat
 
 --
 --
@@ -25,20 +26,49 @@ local function new_session()
 	return {}
 end
 
-local function gen_session_id()
-	return 1234
+local function gen_session_id(dir)
+	while true do
+		local lock = lfs.lock_dir(dir)
+		if not lock then
+			stderr("session: failed to lock %s\n", dir)
+		else
+			local id = string.format("%x", math.random(2147483647)) -- MAX_INT32
+			local fn = string.format("%s/%s", dir, id)
+			local st = lfs.attributes(fn)
+			if not st then
+				local f = assert(io.open(fn, "w+"))
+				f:close()
+				lock:free()
+				return id
+			end
+			lock:free()
+		end
+	end
 end
 
-local function restore_session(id)
-	return {}
+local function restore_session(dir, id)
+	local fn = dir .. '/' .. id
+	local f, err  = io.open(fn)
+	local s
+	if f then
+		s, err = f:read("*a")
+		f:close()
+		if s then
+			return loadstring(s)()
+		end
+	end
+	stderr("session: %s\n", err)
 end
 
-local function delete_session(id)
+local function delete_session(dir, id)
+	os.remove(dir .. '/' .. id)
 end
 
-local function save_session(id, t)
-		local f = function() return t end
-		local s = string.dump(f)
+local function save_session(dir, id, t)
+	local fn = dir .. '/' .. id
+	local f = assert(io.open(fn, "w+"))
+	f:write("return " .. pformat(t))
+	f:close()
 end
 
 --
@@ -46,6 +76,7 @@ end
 function SessionMiddleware(app, t)
 	local count = 1
 	t = t or {}
+	t.session_dir = t.session_dir or "sessions"
 	t.session_id = t.session_id or 'session-id'
 
 	return function(env)
@@ -63,7 +94,7 @@ function SessionMiddleware(app, t)
 		-- load
 		if session_id then
 			if session_id:match("^%x+$") then
-				session = restore_session(session_id)
+				session = restore_session(t.session_dir, session_id)
 			end
 		end
 
@@ -81,16 +112,16 @@ function SessionMiddleware(app, t)
 		-- save or delete
 		if next(session) then
 			if not session_id then
-				session_id=gen_session_id()
+				session_id=gen_session_id(t.session_dir)
 
 				append_header(headers, 'Set-Cookie',
-						string.format('%s=%x;', t.session_id, session_id))
+						string.format('%s=%s;', t.session_id, session_id))
 			end
-			save_session(session_id, session)
+			save_session(t.session_dir, session_id, session)
 		elseif session_id then
 			append_header(headers, 'Set-Cookie',
 					t.session_id .. '=deleted; Expires=Thu, 01 Jan 1970 00:00:01 GMT')
-			delete_session(session_id)
+			delete_session(t.session_dir, session_id)
 		end
 		return status, headers, iter
 	end
