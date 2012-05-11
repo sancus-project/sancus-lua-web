@@ -80,7 +80,7 @@ function SessionMiddleware(app, t)
 	t.session_id = t.session_id or 'session-id'
 
 	return function(env)
-		local session_id, session
+		local session_id, bad_session_id, session
 		local status, headers, iter
 
 		-- detect
@@ -99,7 +99,7 @@ function SessionMiddleware(app, t)
 		end
 
 		if not session then
-			session_id = nil
+			session_id, bad_session_id = nil, session_id
 			session = new_session()
 		end
 
@@ -118,10 +118,12 @@ function SessionMiddleware(app, t)
 						string.format('%s=%s;', t.session_id, session_id))
 			end
 			save_session(t.session_dir, session_id, session)
-		elseif session_id then
+		elseif session_id or bad_session_id then
 			append_header(headers, 'Set-Cookie',
 					t.session_id .. '=deleted; Expires=Thu, 01 Jan 1970 00:00:01 GMT')
-			delete_session(t.session_dir, session_id)
+			if session_id then
+				delete_session(t.session_dir, session_id)
+			end
 		end
 		return status, headers, iter
 	end
