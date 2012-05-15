@@ -43,7 +43,12 @@ function renderer(env, default_headers)
 		end
 
 		res.app_iter = function()
-			coroutine.yield(CodeGen(data, env)(template))
+			local s = CodeGen(data, env)(template)
+			if #s > 0 then
+				coroutine.yield(s)
+			else
+				error(sformat("failed to render %s", template))
+			end
 		end
 	end
 end
