@@ -70,7 +70,7 @@ function C:__call(environ)
 		end
 	end
 
-	local status, headers, iter = handler(self, req, args)
+	local status, headers, iter = handler(self, self.req, args)
 	if status ~= nil then
 		return status, headers, iter
 	end
@@ -79,11 +79,22 @@ end
 
 --
 --
-function MinimalMiddleware(app)
+function MinimalMiddleware(app, interceptor)
 	local function nop() end
 
+	interceptor = interceptor or {}
+
 	return function(env)
-		local status, headers, iter = app(env)
+		local status, headers, iter, h
+
+		h = app
+		while h do
+			status, headers, iter = h(env)
+			if interceptor then
+				h = interceptor[status]
+			end
+		end
+
 		if headers == nil then
 			headers = { ['Content-Type'] = 'plain/text' }
 		end
