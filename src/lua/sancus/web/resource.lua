@@ -85,14 +85,9 @@ function MinimalMiddleware(app, interceptor)
 	interceptor = interceptor or {}
 
 	return function(env)
-		local status, headers, iter, h
-
-		h = app
-		while h do
-			status, headers, iter = h(env)
-			if interceptor then
-				h = interceptor[status]
-			end
+		local status, headers, iter = app(env)
+		if interceptor[status] then
+			_, headers, iter = interceptor[status](env)
 		end
 
 		if headers == nil then
