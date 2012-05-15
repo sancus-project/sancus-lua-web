@@ -3,8 +3,6 @@
 local Class = assert(require"sancus.object").Class
 local URLTemplateCompiler = assert(require"sancus.web.urltemplate").URLTemplateCompiler
 
-local pp = require("sancus.utils").pprint
-
 local M = Class{
 	compile = URLTemplateCompiler
 }
