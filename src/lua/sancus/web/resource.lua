@@ -29,11 +29,10 @@ function C:find_supported_methods(d)
 end
 
 function C:supported_methods(environ)
-	local cls = getmetatable(self)
-	local l = cls._supported_methods
+	local l = self._supported_methods
 	if not l then
-		l = self:find_supported_methods(cls._methods)
-		cls._supported_methods = l
+		l = self:find_supported_methods(self._methods)
+		self._supported_methods = l
 	end
 	return l
 end
