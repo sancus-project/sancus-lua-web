@@ -30,16 +30,17 @@ local function is_one_of(t, r)
 end
 
 function C:__call(h, x)
+	local f
 	if x == nil then
 		-- any authenticated user counts
-		x = function() return true end
+		f = function() return true end
 	elseif type(x) == 'function' then
-		-- use as-is
+		f = x
 	else
 		if type(x) ~= 'table' then
 			x = { x }
 		end
-		x = function(env)
+		f = function(env)
 			return is_one_of(x, self:user_groups(env))
 		end
 	end
@@ -47,7 +48,7 @@ function C:__call(h, x)
 	return function(env)
 		if not self:user_authenticated(env) then
 			return 401
-		elseif x(env) then
+		elseif f(env) then
 			return h(env)
 		else
 			return 403
