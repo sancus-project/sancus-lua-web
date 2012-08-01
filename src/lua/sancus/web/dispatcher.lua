@@ -57,8 +57,8 @@ function M:find_handler(env)
 end
 
 function M:add(expr, h, kw)
-	p = {self.compile(expr), h, kw}
-	self.patterns[#self.patterns + 1] = p
+	local p = assert(self.compile(expr))
+	self.patterns[#self.patterns + 1] = {p, h, kw}
 end
 
 return {
