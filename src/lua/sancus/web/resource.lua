@@ -2,6 +2,7 @@
 
 local Class = assert(require"sancus.object").Class
 local request = assert(require"wsapi.request")
+local mimeparse = require"mimeparse"
 
 local C = Class{
 	_methods = {'GET', 'HEAD', 'POST', 'PUT', 'DELETE'}
@@ -47,6 +48,17 @@ function C:__call(environ)
 		return 405, { Allow = handlers }
 	end
 	handler = self[handler_name]
+
+	if self._accepted_types ~= nil then
+		local content_type = mimeparse.best_match(self._accepted_types,
+				environ.HTTP_ACCEPT or "*/*")
+
+		if content_type == "" then
+			return 406
+		else
+			environ["sancus.content_type"] = content_type
+		end
+	end
 
 	args = environ["sancus.routing_args"] or {}
 
