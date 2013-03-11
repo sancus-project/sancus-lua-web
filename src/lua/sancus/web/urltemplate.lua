@@ -45,7 +45,11 @@ local function parser()
 		local q
 		for _, x in ipairs({...}) do
 			if type(x) == "string" then
-				x = P(x) -- literal patterns
+				if x == "%d" then
+					x = num^1
+				else
+					x = P(x) -- literal patterns
+				end
 			end
 
 			if q then
