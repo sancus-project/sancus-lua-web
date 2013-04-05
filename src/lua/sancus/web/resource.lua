@@ -39,11 +39,13 @@ function C:supported_methods(environ)
 end
 
 function C:__call(environ)
+	local method = environ.REQUEST_METHOD
 	local handlers, handler_name, handler
 	local args
 
 	handlers = self:supported_methods(environ)
-	handler_name = handlers[environ.REQUEST_METHOD]
+	handler_name = handlers[method]
+
 	if not handler_name then
 		return 405, { Allow = handlers }
 	end
@@ -69,7 +71,12 @@ function C:__call(environ)
 	self.status = 200
 	self.headers = {}
 	self.body = {}
-	self.req = request.new(environ)
+
+	if method ~= 'POST' then
+		self.req = request.new(environ, { delay_post = true })
+	else
+		self.req = request.new(environ)
+	end
 
 	function self.app_iter()
 		if type(self.body) == "string" then
