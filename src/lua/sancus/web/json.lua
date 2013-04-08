@@ -6,7 +6,7 @@
 
 local lpeg = require"lpeg"
 local P, R, S = lpeg.P, lpeg.R, lpeg.S
-local C, Ct = lpeg.C, lpeg.Ct
+local C, Ct, Cg = lpeg.C, lpeg.Ct, lpeg.Cg
 local V = lpeg.V
 
 local type, tostring, tonumber, pairs, ipairs = type, tostring, tonumber, pairs, ipairs
@@ -157,6 +157,16 @@ do
 	local white = S" \t" + nl
 	local digit, minus, dot, comma = R"09", P"-", P".", P","
 
+	local escapes = {
+		["\""] = "\"", ["\\"] = "\\", ["/"] = "/",
+		b = "\b", f = "\f", n = "\n", r = "\r", t = "\t",
+	}
+
+	local qq, esc = P"\"", P"\\"
+	local char_0 = C((R"\032\126" - qq - esc)^1)
+	local char_1 = esc * C(S"\"\\/bfnrt")/escapes
+	local char = char_1 + char_0
+
 	local data = P{
 		"data",
 
@@ -165,8 +175,9 @@ do
 		FALSE = C(P("false"))/function() return false end,
 
 		number = C(minus^-1 * digit^1 * (dot * digit^1)^-1)/tonumber,
+		string = Ct(qq * char^0 * qq)/function (t) return tconcat(t, "") end,
 
-		value = V"number" + V"NULL" + V"TRUE" + V"FALSE" + V"array",
+		value = V"number" + V"string" + V"NULL" + V"TRUE" + V"FALSE" + V"array",
 		data = white^0 * V"value" * white^0,
 
 		array_list = (V"data" * comma)^0 * V"data",
