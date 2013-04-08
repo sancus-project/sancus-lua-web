@@ -155,7 +155,7 @@ end
 do
 	local nl = P"\n" + P"\r\n"
 	local white = S" \t" + nl
-	local digit, minus, dot = R"09", P"-", P"."
+	local digit, minus, dot, comma = R"09", P"-", P".", P","
 
 	local data = P{
 		"data",
@@ -166,8 +166,11 @@ do
 
 		number = C(minus^-1 * digit^1 * (dot * digit^1)^-1)/tonumber,
 
-		value = V"number" + V"NULL" + V"TRUE" + V"FALSE",
+		value = V"number" + V"NULL" + V"TRUE" + V"FALSE" + V"array",
 		data = white^0 * V"value" * white^0,
+
+		array_list = (V"data" * comma)^0 * V"data",
+		array = Ct(P"[" * (V"array_list")^0 * P"]")/Array,
 	} * -1
 
 	--data = Ct(data)
