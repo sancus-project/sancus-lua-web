@@ -4,7 +4,12 @@
 -- Copyright (c) 2012, Alejandro Mery <amery@geeks.cl>
 --
 
-local type, tostring, pairs, ipairs = type, tostring, pairs, ipairs
+local lpeg = require"lpeg"
+local P, R, S = lpeg.P, lpeg.R, lpeg.S
+local C, Ct = lpeg.C, lpeg.Ct
+local V = lpeg.V
+
+local type, tostring, tonumber, pairs, ipairs = type, tostring, tonumber, pairs, ipairs
 local select = select
 local setmetatable, getmetatable = setmetatable, getmetatable
 local tconcat = table.concat
@@ -143,6 +148,33 @@ function json_encode(v)
 		end
 	end
 	return s
+end
+
+-- Decoder
+--
+do
+	local nl = P"\n" + P"\r\n"
+	local white = S" \t" + nl
+	local digit, minus, dot = R"09", P"-", P"."
+
+	local data = P{
+		"data",
+
+		NULL = C(P("null"))/function() return Null end,
+		TRUE = C(P("true"))/function() return true end,
+		FALSE = C(P("false"))/function() return false end,
+
+		number = C(minus^-1 * digit^1 * (dot * digit^1)^-1)/tonumber,
+
+		value = V"number" + V"NULL" + V"TRUE" + V"FALSE",
+		data = white^0 * V"value" * white^0,
+	} * -1
+
+	--data = Ct(data)
+
+	json_decode = function(s)
+		return data:match(s)
+	end
 end
 
 return _M
