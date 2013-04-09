@@ -155,7 +155,7 @@ end
 do
 	local nl = P"\n" + P"\r\n"
 	local white = S" \t" + nl
-	local digit, minus, dot, comma = R"09", P"-", P".", P","
+	local digit, minus, dot, comma, colon = R"09", P"-", P".", P",", P":"
 
 	local escapes = {
 		["\""] = "\"", ["\\"] = "\\", ["/"] = "/",
@@ -167,6 +167,14 @@ do
 	local char_1 = esc * C(S"\"\\/bfnrt")/escapes
 	local char = char_1 + char_0
 
+	local function FoldObject(t)
+		local o = Object()
+		for _, v in ipairs(t) do
+			o[v.key] = v.value
+		end
+		return o
+	end
+
 	local data = P{
 		"data",
 
@@ -177,11 +185,15 @@ do
 		number = C(minus^-1 * digit^1 * (dot * digit^1)^-1)/tonumber,
 		string = Ct(qq * char^0 * qq)/function (t) return tconcat(t, "") end,
 
-		value = V"number" + V"string" + V"NULL" + V"TRUE" + V"FALSE" + V"array",
+		value = V"number" + V"string" + V"NULL" + V"TRUE" + V"FALSE" + V"array" + V"object",
 		data = white^0 * V"value" * white^0,
 
 		array_list = (V"data" * comma)^0 * V"data",
 		array = Ct(P"[" * (V"array_list")^0 * P"]")/Array,
+
+		object_entry = Ct(white^0 * Cg(V"string", "key") * colon * Cg(V"data", "value")),
+		object_list = V"object_entry" * (white^0 * comma * V"object_entry")^0,
+		object = Ct(P"{" * white^0 * (V"object_list")^0 * P"}")/FoldObject,
 	} * -1
 
 	--data = Ct(data)
