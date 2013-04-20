@@ -1,10 +1,10 @@
 --
 
-local Class = assert(require"sancus.object").Class
-local URLTemplateCompiler = assert(require"sancus.web.urltemplate").URLTemplateCompiler
+local object = require"sancus.object"
+local urltemplate = require"sancus.web.urltemplate"
 
-local M = Class{
-	compile = URLTemplateCompiler
+local M = object.Class{
+	compile = urltemplate.URLTemplateCompiler
 }
 
 function M:__call(wsapi_env)
