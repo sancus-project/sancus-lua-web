@@ -1,8 +1,55 @@
 --
 
+local utils = require"sancus.utils"
 local object = require"sancus.object"
 local urltemplate = require"sancus.web.urltemplate"
 
+--
+--
+local function wsapi_logger(env, status, message)
+	local h = env.headers
+	local script_name = h["SCRIPT_NAME"]
+	local path_info = h["PATH_INFO"]
+	local method = h["REQUEST_METHOD"]
+	local logged = false
+	local prefix = "PathMapper: %s %s%s: %s"
+
+	if script_name == "" then
+		script_name = path_info
+		path_info = ""
+	elseif path_info ~= "" then
+		path_info = " (PATH_INFO:"..path_info..")"
+	end
+
+	prefix = prefix:format(method, script_name, path_info, status)
+
+	if message ~= nil and message ~= "" then
+		for l in message:gmatch("[^\r\n]+") do
+			logged = true
+			utils.stderr("%s: %s\n", prefix, l)
+		end
+	end
+
+	if not logged then
+		utils.stderr("%s\n", prefix)
+	end
+end
+
+local function wsapi_silent_logger(env, status, message)
+	if status == 500 then
+		return wsapi_logger(env, status, message)
+	end
+end
+
+local function wsapi_traceback(env, logger, e)
+	logger(env, 500, e)
+	logger(env, 500, debug.traceback())
+	logger(env, 500, "-- END TRACEBACK --")
+	return e
+end
+
+--
+--
 local M = object.Class{
 	compile = urltemplate.URLTemplateCompiler
 }
@@ -10,10 +57,21 @@ local M = object.Class{
 function M:__call(wsapi_env)
 	local h = self:find_handler(wsapi_env)
 
-	if h then
-		return h(wsapi_env)
-	else
+	if h == nil then
+		self.logger(wsapi_env, 404, "Handler not found")
 		return 404
+	else
+		local handler = function() return h(wsapi_env) end
+		local traceback = function(e) return wsapi_traceback(wsapi_env, self.logger, e) end
+		local success, status, headers, iter = xpcall(handler, traceback)
+
+		if success then
+			self.logger(wsapi_env, status)
+			return status, headers, iter
+		else
+			-- already logged by traceback
+			return 500
+		end
 	end
 end
 
@@ -65,6 +123,13 @@ return {
 	PathMapper = function (o)
 		o = M(o)
 		o.patterns = o.patterns or {}
+
+		if o.logger == false then
+			o.logger = wsapi_silent_logger
+		elseif o.logger == true or type(o.logger) ~= "function" then
+			o.logger = wsapi_logger
+		end
+
 		return o
 	end
 }
