@@ -60,7 +60,11 @@ function M:__call(wsapi_env)
 		local success, status, headers, iter = xpcall(handler, traceback)
 
 		if success then
-			self.logger(wsapi_env, status)
+			local msg
+			if status >= 300 and status < 400 then
+				msg = headers['Location']
+			end
+			self.logger(wsapi_env, status, msg)
 			return status, headers, iter
 		else
 			-- already logged by traceback
