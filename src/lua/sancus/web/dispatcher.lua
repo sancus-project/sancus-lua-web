@@ -23,16 +23,7 @@ local function wsapi_logger(env, status, message)
 
 	prefix = prefix:format(method, script_name, path_info, status)
 
-	if message ~= nil and message ~= "" then
-		for l in message:gmatch("[^\r\n]+") do
-			logged = true
-			utils.stderr("%s: %s\n", prefix, l)
-		end
-	end
-
-	if not logged then
-		utils.stderr("%s\n", prefix)
-	end
+	utils.stderr_prefixed_lines(prefix, message)
 end
 
 local function wsapi_silent_logger(env, status, message)
