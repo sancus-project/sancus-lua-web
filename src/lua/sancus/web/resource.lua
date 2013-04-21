@@ -133,7 +133,23 @@ function MinimalMiddleware(app, interceptor)
 	end
 end
 
+function RemoveTrailingSlashMiddleware(app)
+	return function(env)
+		local path_info = env.headers["PATH_INFO"]
+		if #path_info > 1 and path_info:sub(-1) == '/' then
+			local headers = { Location = path_info:sub(0, -2) }
+			local function iter()
+				return
+			end
+			return 301, headers, coroutine.wrap(iter)
+		else
+			return app(env)
+		end
+	end
+end
+
 return {
 	Resource = C,
 	MinimalMiddleware = MinimalMiddleware,
+	RemoveTrailingSlashMiddleware = RemoveTrailingSlashMiddleware,
 }
