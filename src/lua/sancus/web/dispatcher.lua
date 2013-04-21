@@ -27,7 +27,7 @@ local function wsapi_logger(env, status, message)
 end
 
 local function wsapi_silent_logger(env, status, message)
-	if status == 500 then
+	if status >= 500 and status < 600 then
 		return wsapi_logger(env, status, message)
 	end
 end
@@ -49,6 +49,9 @@ function M:__call(wsapi_env)
 	local h = self:find_handler(wsapi_env)
 
 	if h == nil then
+		h = wsapi_env.headers
+		h["SCRIPT_NAME"] = h["SCRIPT_NAME"] .. h["PATH_INFO"]
+		h["PATH_INFO"] = ""
 		self.logger(wsapi_env, 404, "Handler not found")
 		return 404
 	else
