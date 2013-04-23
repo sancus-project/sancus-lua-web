@@ -4,6 +4,7 @@
 -- Copyright (c) 2012, Alejandro Mery <amery@geeks.cl>
 --
 
+local Class = require"sancus.object.Class"
 local lpeg = require"lpeg"
 local P, R, S = lpeg.P, lpeg.R, lpeg.S
 local C, Ct, Cg = lpeg.C, lpeg.Ct, lpeg.Cg
@@ -43,29 +44,11 @@ local function json_encode_array(o)
 	end
 end
 
-local json_array_mt = {
+Array = Class{
 	__tostring = function(self)
 		return json_encode_array(self)
 	end,
 }
-
-function Array(...)
-	local l = select('#', ...)
-	local o
-
-	if l == 0 then
-		o = {}
-	elseif l > 1 then
-		o = { ... }
-	else
-		o = select(1, ...)
-		if type(o) ~= 'table' then
-			o = { o }
-		end
-	end
-	setmetatable(o, json_array_mt)
-	return o
-end
 
 -- Object
 --
@@ -85,29 +68,13 @@ local function json_encode_object(o)
 	end
 end
 
-local json_object_mt = {
+-- Object
+--
+Object = Class{
 	__tostring = function(self)
 		return json_encode_object(self)
 	end,
 }
-
-function Object(...)
-	local l = select('#', ...)
-	local o
-
-	if l == 0 then
-		o = {}
-	elseif l > 1 then
-		o = { ... }
-	else
-		o = select(1, ...)
-		if type(o) ~= 'table' then
-			o = { o }
-		end
-	end
-	setmetatable(o, json_object_mt)
-	return o
-end
 
 -- Null
 --
