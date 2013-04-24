@@ -45,9 +45,8 @@ local function json_encode_array(o)
 end
 
 Array = Class{
-	__tostring = function(self)
-		return json_encode_array(self)
-	end,
+	__tostring = json_encode_array,
+	json_encoded = json_encode_array,
 }
 
 -- Object
@@ -71,23 +70,26 @@ end
 -- Object
 --
 Object = Class{
-	__tostring = function(self)
-		return json_encode_object(self)
-	end,
+	__tostring = json_encode_object,
+	json_encoded = json_encode_object,
 }
 
 -- Null
 --
-local json_null_mt = {
-	__tostring = function(self)
-		return "null"
-	end,
+local function json_encode_nil(o)
+	return "null"
+end
+
+Null = {
+	__tostring = json_encode_nil,
+	json_encoded = json_encode_nil,
+
 	__call = function(self)
 		return self
 	end,
 }
-Null = {}
-setmetatable(Null, json_null_mt)
+Null.__index = Null
+setmetatable(Null, Null)
 
 -- Generic Encoder
 --
@@ -100,6 +102,8 @@ function json_encode(v)
 		s = tostring(v)
 	elseif t == "string" then
 		s = json_encode_string(v)
+	elseif v.json_encoded ~= nil then
+		s = v:json_encoded()
 	else
 		local mt = getmetatable(v)
 		if mt ~= nil and mt.__tostring ~= nil then
