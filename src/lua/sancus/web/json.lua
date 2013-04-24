@@ -25,16 +25,16 @@ local function quote(s)
 	return s:gsub("\\","\\\\"):gsub("\"", '\\"'):gsub("\n", "\\n"):gsub("\t","\\t")
 end
 
-local function json_encode_string(v)
+local function json_encoded_string(v)
 	return "\"" .. quote(v) .. "\""
 end
 
 -- Array
 --
-local function json_encode_array(o)
+local function json_encoded_array(o)
 	local t = {}
 	for _, v in ipairs(o) do
-		t[#t+1] = json_encode(v)
+		t[#t+1] = json_encoded(v)
 	end
 
 	if #t > 0 then
@@ -45,19 +45,19 @@ local function json_encode_array(o)
 end
 
 Array = Class{
-	__tostring = json_encode_array,
-	json_encoded = json_encode_array,
+	__tostring = json_encoded_array,
+	json_encoded = json_encoded_array,
 }
 
 -- Object
 --
-local function json_encode_object(o)
+local function json_encoded_object(o)
 	local t = {}
 	local fmt = "%s: %s"
 
 	for k, v in pairs(o) do
-		k = json_encode_string(k)
-		v = json_encode(v)
+		k = json_encoded_string(k)
+		v = json_encoded(v)
 		t[#t+1] = fmt:format(k, v)
 	end
 	if #t > 0 then
@@ -70,19 +70,19 @@ end
 -- Object
 --
 Object = Class{
-	__tostring = json_encode_object,
-	json_encoded = json_encode_object,
+	__tostring = json_encoded_object,
+	json_encoded = json_encoded_object,
 }
 
 -- Null
 --
-local function json_encode_nil(o)
+local function json_encoded_nil(o)
 	return "null"
 end
 
 Null = {
-	__tostring = json_encode_nil,
-	json_encoded = json_encode_nil,
+	__tostring = json_encoded_nil,
+	json_encoded = json_encoded_nil,
 
 	__call = function(self)
 		return self
@@ -93,7 +93,7 @@ setmetatable(Null, Null)
 
 -- Generic Encoder
 --
-function json_encode(v)
+function json_encoded(v)
 	local t = type(v)
 	local s
 	if t == "nil" then
@@ -101,7 +101,7 @@ function json_encode(v)
 	elseif t == "boolean" or t == "number" then
 		s = tostring(v)
 	elseif t == "string" then
-		s = json_encode_string(v)
+		s = json_encoded_string(v)
 	elseif v.json_encoded ~= nil then
 		s = v:json_encoded()
 	else
@@ -109,9 +109,9 @@ function json_encode(v)
 		if mt ~= nil and mt.__tostring ~= nil then
 			s = tostring(v)
 		elseif #v > 0 then
-			s = json_encode_array(v)
+			s = json_encoded_array(v)
 		else
-			s = json_encode_object(v)
+			s = json_encoded_object(v)
 			-- prefer empty arrays instead of empty objects
 			if s == "{}" then
 				s = "[]"
