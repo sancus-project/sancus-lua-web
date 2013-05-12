@@ -1,7 +1,7 @@
 #!/bin/sh
 
 find_lua() {
-	find "$@" -name '*.lua' | sort -V | tr '\n' ' ' | fmt -w60 | tr '\n' '|' |
+	find "$@" -name '*.lua' | sort -V | tr '\n' ' ' | tr -s ' ' | tr ' ' '|' |
 		sed -e 's,|$,,' -e 's,|, \\\n\t,g'
 }
 
