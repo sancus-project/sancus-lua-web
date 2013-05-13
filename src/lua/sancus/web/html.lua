@@ -73,7 +73,7 @@ function encode(v)
 	else
 		local mt = getmetatable(v)
 		if mt and mt.__tostring then
-			s = tostring(v)
+			s = encode(tostring(v))
 		elseif #v > 0 then
 			local t = {}
 			for i,sv in ipairs(v) do
