@@ -40,6 +40,7 @@ end
 
 function C:__call(environ)
 	local method = environ.REQUEST_METHOD
+	local h = environ.headers
 	local handlers, handler_name, handler
 	local args
 
@@ -53,20 +54,20 @@ function C:__call(environ)
 
 	if self._accepted_types ~= nil then
 		local content_type = mimeparse.best_match(self._accepted_types,
-				environ.HTTP_ACCEPT or "*/*")
+				h.HTTP_ACCEPT or "*/*")
 
 		if content_type == "" then
 			return 406
 		else
-			environ["sancus.content_type"] = content_type
+			h["sancus.content_type"] = content_type
 		end
 	end
 
-	args = environ["sancus.routing_args"] or {}
+	args = h["sancus.routing_args"] or {}
 
-	environ["sancus.handler_name"] = handler_name
-	environ["sancus.handler"] = handler
-	environ["sancus.named_args"] = args
+	h["sancus.handler_name"] = handler_name
+	h["sancus.handler"] = handler
+	h["sancus.named_args"] = args
 
 	self.status = 200
 	self.headers = {}
