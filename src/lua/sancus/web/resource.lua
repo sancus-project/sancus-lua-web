@@ -89,7 +89,14 @@ function C:__call(environ)
 		end
 	end
 
-	local status, headers, iter = handler(self, self.req, args)
+	local status, headers, iter
+
+	if self._pre_handler then
+		status, headers, iter = self._pre_handler(self, self.req, args)
+	end
+	if not status then
+		status, headers, iter = handler(self, self.req, args)
+	end
 	if status ~= nil then
 		return status, headers, iter
 	end
