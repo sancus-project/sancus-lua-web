@@ -4,7 +4,6 @@ nobase_dist_luadata_DATA = \
 	sancus/web/dispatcher.lua \
 	sancus/web/html.lua \
 	sancus/web/init.lua \
-	sancus/web/json.lua \
 	sancus/web/resource.lua \
 	sancus/web/session.lua \
 	sancus/web/urltemplate.lua
